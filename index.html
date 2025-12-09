@@ -9,6 +9,64 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
     <script>
+      // Global Polyfills
+      window.global = window;
+      
+      // Process Polyfill: Minimal definition to satisfy process.env usage
+      window.process = { 
+        env: { NODE_ENV: 'production' },
+        browser: true,
+      };
+      
+      // Buffer Polyfill: Required for some Appwrite/Gemini internals
+      if (typeof window.Buffer === 'undefined') {
+          function Buffer(arg) {
+             if (typeof arg === 'string') {
+                return new TextEncoder().encode(arg);
+             }
+             return new Uint8Array(arg);
+          }
+
+          Buffer.isBuffer = function(obj) {
+              return obj instanceof Uint8Array;
+          };
+
+          Buffer.from = function(data, encoding) {
+              if (typeof data === 'string') {
+                   return new TextEncoder().encode(data);
+              }
+              return new Uint8Array(data);
+          };
+
+          Buffer.alloc = function(size) {
+              return new Uint8Array(size);
+          };
+
+          Buffer.byteLength = function(string, encoding) {
+              if (typeof string !== 'string') {
+                  return string ? string.length : 0;
+              }
+              return new TextEncoder().encode(string).length;
+          };
+
+          Buffer.concat = function(list) {
+              let length = 0;
+              for(let i = 0; i < list.length; i++) {
+                  length += list[i].length;
+              }
+              let result = new Uint8Array(length);
+              let offset = 0;
+              for(let i = 0; i < list.length; i++) {
+                  result.set(list[i], offset);
+                  offset += list[i].length;
+              }
+              return result;
+          };
+
+          window.Buffer = Buffer;
+      }
+    </script>
+    <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
@@ -46,20 +104,33 @@
         -moz-osx-font-smoothing: grayscale;
       }
       
-      /* Editor JS Specific Overrides */
+      /* Editor JS General Fixes */
       .ce-block__content, .ce-toolbar__content { max-width: 100%; margin: 0 auto; }
       
-      /* Make Headers Big in Editor */
-      h1.ce-header { font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.5em; }
-      h2.ce-header { font-size: 2rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.5em; }
-      h3.ce-header { font-size: 1.5rem; font-weight: 600; line-height: 1.4; margin-bottom: 0.5em; }
+      /* Light Mode Contrast for Editor Popovers */
+      .ce-popover {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .ce-popover__item-label {
+        color: #1e293b;
+        font-weight: 500;
+      }
+      .ce-popover__item-icon {
+        color: #475569;
+        background: transparent;
+        box-shadow: none;
+      }
+      .ce-popover__item:hover .ce-popover__item-icon {
+        background-color: transparent;
+      }
       
       /* Dark Mode Editor Overrides */
       .dark .ce-header, 
       .dark .ce-paragraph, 
       .dark .cdx-list__item, 
       .dark .ce-code__textarea,
-      .dark .cdx-quote__text,
+      .dark .cdx-quote__text, 
       .dark .cdx-quote__caption,
       .dark .tc-table__cell { 
         color: #f1f5f9; 
@@ -76,7 +147,7 @@
         font-size: 30px;
       }
 
-      /* Toolbar Buttons */
+      /* Toolbar Buttons (Left Side) */
       .dark .ce-toolbar__plus, .dark .ce-toolbar__settings-btn { 
         color: #e2e8f0; 
         background-color: #334155; 
@@ -84,9 +155,10 @@
       }
       .dark .ce-toolbar__plus:hover, .dark .ce-toolbar__settings-btn:hover { 
         background-color: #475569; 
+        color: #fff;
       }
       
-      /* Popovers / Menus */
+      /* Popovers / Menus in Dark Mode */
       .dark .ce-popover { 
         background-color: #1e293b; 
         border: 1px solid #334155; 
@@ -95,30 +167,47 @@
       .dark .ce-popover__item:hover { 
         background-color: #334155; 
       }
-      .dark .ce-popover__item-label { color: #e2e8f0; }
+      .dark .ce-popover__item-label { color: #f1f5f9; }
       .dark .ce-popover__item-icon { 
-        color: #e2e8f0; 
-        background-color: #334155; 
+        color: #cbd5e1; 
+        background-color: transparent;
         box-shadow: none;
       }
       
+      /* Inline Toolbar (Text Selection) in Dark Mode */
       .dark .ce-inline-toolbar { 
         background-color: #1e293b; 
-        border-color: #334155; 
+        border: 1px solid #334155; 
         color: #fff; 
+      }
+      .dark .ce-inline-tool {
+        color: #e2e8f0;
       }
       .dark .ce-inline-tool:hover { 
         background-color: #334155; 
+        color: #fff;
       }
       .dark .ce-inline-tool--active {
-        color: #0d9488;
+        color: #0d9488; /* Brand Accent */
+      }
+      .dark .ce-conversion-toolbar {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+      }
+      .dark .ce-conversion-tool__icon {
+        background: transparent;
+      }
+      .dark .ce-conversion-tool:hover {
+        background-color: #334155;
       }
 
+      /* Table Tool Dark Mode */
       .dark .tc-popover {
         background-color: #1e293b;
         border: 1px solid #334155;
       }
-
+      .dark .tc-row::after { background: #334155; }
+      
       /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -133,7 +222,7 @@
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "appwrite": "https://aistudiocdn.com/appwrite@^14.0.1",
+    "appwrite": "https://aistudiocdn.com/appwrite@^16.0.2",
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
     "@editorjs/editorjs": "https://esm.sh/@editorjs/editorjs@2.29.0",
     "@editorjs/header": "https://esm.sh/@editorjs/header@2.8.1",

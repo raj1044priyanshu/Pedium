@@ -49,9 +49,10 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
   const getImageUrl = (article: Article) => {
       if (article.coverImageId) {
-          return appwriteService.getFilePreview(article.coverImageId).toString();
+          // Use getFileView to ensure it works just like the article page
+          return appwriteService.getFileView(article.coverImageId).toString();
       }
-      return `https://picsum.photos/seed/${article.$id}/800/600`;
+      return null;
   };
 
   if (error) return <SetupGuide onRetry={fetchArticles} />;
@@ -117,7 +118,10 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                        <Link to="/write" className="text-brand-accent font-bold hover:underline">Write a story</Link>
                    </div>
                  ) : (
-                   filteredArticles.map((article) => (
+                   filteredArticles.map((article) => {
+                     const coverUrl = getImageUrl(article);
+                     
+                     return (
                      <article key={article.$id} className="group cursor-pointer flex flex-col md:flex-row gap-8 items-start border-b border-gray-100 dark:border-gray-800 pb-12 last:border-0" onClick={() => window.location.hash = `#/article/${article.$id}`}>
                         <div className="flex-1 order-2 md:order-1">
                           <div className="flex items-center space-x-2 mb-3">
@@ -128,7 +132,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                              />
                              <span className="text-sm font-semibold text-gray-900 dark:text-white">{article.authorName}</span>
                              <span className="text-gray-400 text-sm">·</span>
-                             <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(article.createdAt).toLocaleDateString()}</span>
+                             <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(article.$createdAt).toLocaleDateString()}</span>
                           </div>
                           <h2 className="text-2xl font-bold font-serif mb-3 text-gray-900 dark:text-white group-hover:text-brand-accent transition-colors leading-tight">
                             {article.title}
@@ -150,15 +154,29 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                              </svg>
                           </div>
                         </div>
-                        <div className="w-full md:w-48 h-48 md:h-32 rounded-lg overflow-hidden order-1 md:order-2 shadow-sm group-hover:shadow-md transition bg-gray-100 dark:bg-brand-card">
-                          <img 
-                            src={getImageUrl(article)} 
-                            alt="Cover" 
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
-                          />
+                        <div className="w-full md:w-48 h-48 md:h-32 rounded-lg overflow-hidden order-1 md:order-2 shadow-sm group-hover:shadow-md transition bg-gray-100 dark:bg-brand-card flex-shrink-0 relative">
+                          {coverUrl ? (
+                            <img 
+                                src={coverUrl} 
+                                alt={article.title}
+                                onError={(e) => {
+                                    // If the real image fails, show a placeholder.
+                                    console.warn("Cover image failed to load. Check bucket permissions.", coverUrl);
+                                    e.currentTarget.src = `https://ui-avatars.com/api/?name=Error&background=fee2e2&color=991b1b&font-size=0.3`;
+                                }}
+                                className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
+                            />
+                          ) : (
+                             // No cover image uploaded? Show random nice image.
+                             <img 
+                                src={`https://picsum.photos/seed/${article.$id}/800/600`}
+                                alt="Random Cover"
+                                className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 grayscale hover:grayscale-0 opacity-80 hover:opacity-100"
+                            />
+                          )}
                         </div>
                      </article>
-                   ))
+                   )})
                  )}
                </div>
              )}

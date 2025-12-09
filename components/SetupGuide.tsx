@@ -108,8 +108,8 @@ export const SetupGuide: React.FC<SetupGuideProps> = ({ onRetry }) => {
                   <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold">summary</td><td>String</td><td>5000</td><td>Yes</td><td>-</td></tr>
                   <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold">userId</td><td>String</td><td>255</td><td>Yes</td><td>-</td></tr>
                   <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold">authorName</td><td>String</td><td>255</td><td>Yes</td><td>-</td></tr>
-                  <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold">createdAt</td><td>String</td><td>255</td><td>Yes</td><td>-</td></tr>
                   <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold">tags</td><td>String</td><td>255</td><td>No</td><td>Yes</td></tr>
+                  <tr className="hover:bg-gray-50"><td className="px-4 py-3 font-mono font-bold text-brand-accent">coverImageId</td><td>String</td><td>255</td><td>No</td><td>-</td></tr>
                 </tbody>
               </table>
             </div>

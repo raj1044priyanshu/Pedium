@@ -39,7 +39,13 @@ const ArticleView: React.FC<ArticleViewProps> = ({ user }) => {
               switch (block.type) {
                   case 'header':
                       const Level = `h${block.data.level}` as React.ElementType;
-                      return <Level key={idx} className="font-serif font-bold text-gray-900 dark:text-white mt-8 mb-4" dangerouslySetInnerHTML={{ __html: block.data.text }} />;
+                      // Explicitly set sizes because Tailwind preflight resets headers
+                      let sizeClass = "text-xl";
+                      if (block.data.level === 1) sizeClass = "text-4xl md:text-5xl";
+                      if (block.data.level === 2) sizeClass = "text-3xl md:text-4xl";
+                      if (block.data.level === 3) sizeClass = "text-2xl md:text-3xl";
+                      
+                      return <Level key={idx} className={`font-serif font-bold text-gray-900 dark:text-white mt-8 mb-4 ${sizeClass}`} dangerouslySetInnerHTML={{ __html: block.data.text }} />;
                   case 'paragraph':
                       return <p key={idx} className="mb-6 leading-8 text-xl text-gray-800 dark:text-gray-300 font-serif" dangerouslySetInnerHTML={{ __html: block.data.text }} />;
                   case 'list':
@@ -128,7 +134,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ user }) => {
                 <div className="text-left">
                     <div className="font-bold text-gray-900 dark:text-white">{article.authorName}</div>
                     <div className="text-gray-500 dark:text-gray-400 text-sm flex items-center space-x-2">
-                        <span>{new Date(article.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                        <span>{new Date(article.$createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
                         <span>·</span>
                         <span>{Math.ceil(article.content.length / 2000)} min read</span>
                     </div>

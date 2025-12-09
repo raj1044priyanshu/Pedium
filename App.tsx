@@ -30,15 +30,15 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="h-screen w-screen flex items-center justify-center bg-white dark:bg-[#0B1120]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
       </div>
     );
   }
 
   return (
     <Router>
-      <div className="min-h-screen bg-white font-sans text-brand-black">
+      <div className="min-h-screen bg-white dark:bg-[#0B1120] font-sans text-brand-black dark:text-white transition-colors duration-300">
         <Navbar user={user} setUser={setUser} />
         <main>
           <Routes>

@@ -76,7 +76,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
                                         <div className="flex flex-col md:flex-row gap-6">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500 dark:text-gray-400">
-                                                    <span>{new Date(article.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                    <span>{new Date(article.$createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                                                     <span>•</span>
                                                     <span className="uppercase tracking-wider">{article.tags?.[0] || 'Article'}</span>
                                                 </div>
@@ -93,7 +93,7 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
                                             {article.coverImageId && (
                                                 <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                                                     <img 
-                                                        src={appwriteService.getFilePreview(article.coverImageId).toString()} 
+                                                        src={appwriteService.getFileView(article.coverImageId).toString()} 
                                                         alt={article.title}
                                                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                                                     />

@@ -29,7 +29,7 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-white dark:bg-brand-darker px-4 transition-colors duration-300">
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-white dark:bg-brand-darker px-4 transition-colors duration-300">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
            <h2 className="text-4xl font-serif font-medium text-gray-900 dark:text-white">Welcome back</h2>
@@ -39,22 +39,22 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-5">
             <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1">Email address</label>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-2 ml-1">Email address</label>
                 <input
                   type="email"
                   required
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg placeholder-gray-400 text-gray-900 dark:text-white dark:bg-brand-card focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-400 dark:border-gray-600 rounded-lg placeholder-gray-500 text-gray-900 bg-white dark:text-white dark:bg-brand-card focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
             </div>
             <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1">Password</label>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-2 ml-1">Password</label>
                 <input
                   type="password"
                   required
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg placeholder-gray-400 text-gray-900 dark:text-white dark:bg-brand-card focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-400 dark:border-gray-600 rounded-lg placeholder-gray-500 text-gray-900 bg-white dark:text-white dark:bg-brand-card focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

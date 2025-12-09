@@ -13,7 +13,7 @@ export interface Article {
   userId: string;
   authorName: string;
   tags: string[];
-  createdAt: string;
+  $createdAt: string; // Using Appwrite system attribute
   coverImageId?: string;
 }
 

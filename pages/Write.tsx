@@ -53,7 +53,7 @@ const Write: React.FC<WriteProps> = ({ user }) => {
                     inlineToolbar: true,
                     config: {
                       placeholder: 'Heading',
-                      levels: [1, 2, 3], // Enabled H1, H2, H3
+                      levels: [1, 2, 3],
                       defaultLevel: 2
                     }
                 },
@@ -69,16 +69,26 @@ const Write: React.FC<WriteProps> = ({ user }) => {
                   class: ImageTool,
                   config: {
                     uploader: {
-                      uploadByFile(file: File) {
-                        return appwriteService.uploadFile(file).then((response) => {
-                          const url = appwriteService.getFileView(response.$id).toString();
-                          return {
-                            success: 1,
-                            file: {
-                              url: url,
-                            }
-                          };
-                        });
+                      async uploadByFile(file: File) {
+                        try {
+                            const response = await appwriteService.uploadFile(file);
+                            // Use getFilePreview for editor images to ensure they load faster and work in the editor
+                            // getFileView might be better for full res, but preview is safer for editors
+                            const url = appwriteService.getFileView(response.$id).toString();
+                            return {
+                                success: 1,
+                                file: {
+                                    url: url,
+                                }
+                            };
+                        } catch (error: any) {
+                            console.error("Editor Image Upload Error:", error);
+                            alert("Failed to upload image: " + (error.message || "Unknown error"));
+                            return {
+                                success: 0,
+                                file: { url: null }
+                            };
+                        }
                       }
                     }
                   }
@@ -133,14 +143,11 @@ const Write: React.FC<WriteProps> = ({ user }) => {
       if (!editorInstance.current) throw new Error("Editor not initialized");
       const outputData = await editorInstance.current.save();
       
-      // Check if empty
       if (outputData.blocks.length === 0) {
           throw new Error("Please write some content before publishing.");
       }
 
       const contentJson = JSON.stringify(outputData);
-      
-      // Extract plain text for AI Summary
       const plainText = outputData.blocks.map(b => b.data.text || '').join('\n');
 
       // 2. Upload Cover Image (if any)
@@ -151,21 +158,27 @@ const Write: React.FC<WriteProps> = ({ user }) => {
              const fileUpload = await appwriteService.uploadFile(coverImage);
              coverImageId = fileUpload.$id;
           } catch (err: any) {
-              console.error("Image upload failed:", err);
-              if (err.message.includes('Permissions')) {
-                 throw new Error("Storage permissions missing. Check Appwrite Console.");
-              }
+              console.error("Cover Image Upload Failed:", err);
+              // Throwing here to ensure the user knows the image failed
+              throw new Error(`Cover image upload failed: ${err.message}. Check Storage Permissions.`);
           }
       }
 
       // 3. AI Magic
       setPublishStage('Generating AI summary & tags');
-      const summary = await geminiService.generateSummary(plainText);
-      const tags = await geminiService.suggestTags(plainText);
+      let summary = "";
+      let tags: string[] = [];
+      
+      try {
+          summary = await geminiService.generateSummary(plainText);
+          tags = await geminiService.suggestTags(plainText);
+      } catch (aiError) {
+          console.warn("AI generation failed, using defaults", aiError);
+          summary = plainText.substring(0, 150) + "...";
+          tags = ["General"];
+      }
 
       // 4. Save to Database
-      // REMOVED 'createdAt' from payload as it causes "Unknown attribute" error if not in schema.
-      // Appwrite handles creation time automatically ($createdAt).
       setPublishStage('Publishing to Pedium');
       
       await appwriteService.createArticle({
@@ -182,11 +195,16 @@ const Write: React.FC<WriteProps> = ({ user }) => {
       setTimeout(() => navigate('/'), 1000);
 
     } catch (e: any) {
-      console.error(e);
+      console.error("Publishing Error:", e);
       let msg = e.message || "Failed to publish.";
-      if (msg.includes('Unknown attribute')) {
-         msg = "Database Schema Error: " + msg + ". Please check your Appwrite Database Attributes.";
+      
+      // Specifically catch the schema error for better UX
+      if (msg.includes('Unknown attribute: "coverImageId"')) {
+         msg = "Database Schema Error: Missing 'coverImageId' attribute. Please go to Appwrite Console > Database > Articles > Attributes and add 'coverImageId' as a String (255).";
+      } else if (msg.includes('Unknown attribute')) {
+         msg = "Database Schema Error: " + msg + ". Please update your Appwrite collection attributes.";
       }
+      
       setPublishError(msg);
     }
   };
@@ -240,7 +258,7 @@ const Write: React.FC<WriteProps> = ({ user }) => {
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer bg-gray-50 dark:bg-[#111827] hover:bg-gray-100 dark:hover:bg-gray-800 transition group">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <svg className="w-8 h-8 mb-3 text-gray-400 group-hover:text-brand-accent transition-colors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.017 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
                             </svg>
                             <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload cover image</span></p>
                         </div>

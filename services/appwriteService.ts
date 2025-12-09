@@ -38,8 +38,8 @@ export const appwriteService = {
       return storage.createFile(BUCKET_ID_IMAGES, ID.unique(), file);
   },
 
-  getFilePreview(fileId: string) {
-      return storage.getFilePreview(BUCKET_ID_IMAGES, fileId);
+  getFilePreview(fileId: string, width?: number, height?: number) {
+      return storage.getFilePreview(BUCKET_ID_IMAGES, fileId, width, height);
   },
   
   getFileView(fileId: string) {
@@ -47,7 +47,7 @@ export const appwriteService = {
   },
 
   // Articles
-  async createArticle(article: Omit<Article, '$id' | 'createdAt'>) {
+  async createArticle(article: Omit<Article, '$id' | '$createdAt'>) {
     return databases.createDocument(
       DB_ID,
       COLLECTION_ID_ARTICLES,
@@ -61,7 +61,7 @@ export const appwriteService = {
         return await databases.listDocuments(
             DB_ID,
             COLLECTION_ID_ARTICLES,
-            [Query.orderDesc('createdAt'), ...queries]
+            [Query.orderDesc('$createdAt'), ...queries]
         );
     } catch (error) {
         console.warn("Sorting failed (likely missing index), fetching unsorted.", error);
@@ -86,7 +86,7 @@ export const appwriteService = {
         return await databases.listDocuments(
           DB_ID,
           COLLECTION_ID_ARTICLES,
-          [Query.equal('userId', userId), Query.orderDesc('createdAt')]
+          [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
         );
     } catch (e) {
          return await databases.listDocuments(
