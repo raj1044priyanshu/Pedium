@@ -17,8 +17,11 @@ const ArticleView: React.FC<ArticleViewProps> = ({ user }) => {
   const [likes, setLikes] = useState<string[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  
   const [isFollowing, setIsFollowing] = useState(false);
   const [followDocId, setFollowDocId] = useState<string | null>(null);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
   const [views, setViews] = useState(0);
 
   useEffect(() => {
@@ -102,22 +105,30 @@ const ArticleView: React.FC<ArticleViewProps> = ({ user }) => {
 
   const handleFollow = async () => {
       if (!user || !article) return alert("Please sign in to follow.");
+      if (isFollowLoading) return; // Prevent double clicks
       
       const targetUserId = article.userId;
       
-      setIsFollowing(!isFollowing); // Optimistic
+      setIsFollowLoading(true);
+      const previousState = isFollowing;
+      
+      // Optimistic Update
+      setIsFollowing(!isFollowing); 
 
       try {
-          if (isFollowing && followDocId) {
+          if (previousState && followDocId) {
               await appwriteService.unfollowUser(followDocId);
               setFollowDocId(null);
           } else {
               const res = await appwriteService.followUser(user.$id, targetUserId);
               setFollowDocId(res.$id);
           }
-      } catch (e) {
-          setIsFollowing(isFollowing); // Revert
+      } catch (e: any) {
+          setIsFollowing(previousState); // Revert
           console.error("Follow failed", e);
+          alert("Follow failed: " + e.message);
+      } finally {
+          setIsFollowLoading(false);
       }
   };
 
@@ -265,11 +276,12 @@ const ArticleView: React.FC<ArticleViewProps> = ({ user }) => {
                 {user && user.$id !== article.userId && (
                     <button 
                         onClick={handleFollow}
-                        className={`px-5 py-1.5 rounded-full text-sm font-bold transition ${isFollowing 
+                        disabled={isFollowLoading}
+                        className={`px-5 py-1.5 rounded-full text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${isFollowing 
                             ? 'bg-transparent border border-gray-400 text-gray-600 dark:text-gray-300 dark:border-gray-500 hover:border-gray-600 dark:hover:border-gray-300' 
                             : 'bg-brand-accent text-white hover:bg-brand-accentHover shadow-md'}`}
                     >
-                        {isFollowing ? 'Following' : 'Follow'}
+                        {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
                     </button>
                 )}
             </div>

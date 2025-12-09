@@ -6,9 +6,10 @@ import { appwriteService } from '../services/appwriteService';
 interface NavbarProps {
   user: UserProfile | null;
   setUser: (user: UserProfile | null) => void;
+  authLoading?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user, setUser }) => {
+const Navbar: React.FC<NavbarProps> = ({ user, setUser, authLoading = false }) => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -43,6 +44,9 @@ const Navbar: React.FC<NavbarProps> = ({ user, setUser }) => {
     navigate('/');
   };
 
+  // Avatar Logic: Prefs > Initial
+  const avatarSrc = user?.prefs?.avatar || null;
+
   return (
     <nav className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/80 dark:bg-brand-dark/95 backdrop-blur-md z-40 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,7 +67,9 @@ const Navbar: React.FC<NavbarProps> = ({ user, setUser }) => {
                )}
             </button>
 
-            {user ? (
+            {authLoading ? (
+               <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse"></div>
+            ) : user ? (
               <>
                 <Link to="/write" className="text-gray-500 dark:text-gray-300 hover:text-brand-accent dark:hover:text-brand-accent flex items-center space-x-2 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -76,9 +82,13 @@ const Navbar: React.FC<NavbarProps> = ({ user, setUser }) => {
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="flex items-center space-x-2 focus:outline-none transition-transform hover:scale-105"
                   >
-                     <div className="w-10 h-10 bg-brand-accent text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg border-2 border-white dark:border-brand-dark">
-                        {user.name.charAt(0).toUpperCase()}
-                     </div>
+                     {avatarSrc ? (
+                        <img src={avatarSrc} alt={user.name} className="w-10 h-10 rounded-full border-2 border-white dark:border-brand-dark shadow-md bg-white" />
+                     ) : (
+                        <div className="w-10 h-10 bg-brand-accent text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg border-2 border-white dark:border-brand-dark">
+                            {user.name.charAt(0).toUpperCase()}
+                        </div>
+                     )}
                   </button>
                   
                   {/* Dropdown Menu */}

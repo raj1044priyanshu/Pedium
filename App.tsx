@@ -12,44 +12,54 @@ import { UserProfile } from './types';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const userData = await appwriteService.getCurrentUser();
+        
+        // Auto-generate avatar for users (e.g. Google Login) who don't have one yet
+        if (userData && (!userData.prefs || !userData.prefs.avatar)) {
+             const avatarUrl = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(userData.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+             try {
+                 await appwriteService.updatePrefs({ avatar: avatarUrl });
+                 // Manually update local state to reflect change immediately
+                 if (!userData.prefs) userData.prefs = {};
+                 userData.prefs.avatar = avatarUrl;
+             } catch (prefError) {
+                 console.warn("Failed to auto-set avatar preference", prefError);
+             }
+        }
+
         setUser(userData as unknown as UserProfile);
       } catch (e) {
         setUser(null);
       } finally {
-        setLoading(false);
+        setAuthLoading(false);
       }
     };
     checkAuth();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-white dark:bg-[#0B1120]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-      </div>
-    );
-  }
-
+  // Removed the blocking if(loading) return ... to allow immediate render of Home
+  
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-[#0B1120] font-sans text-brand-black dark:text-white transition-colors duration-300">
-        <Navbar user={user} setUser={setUser} />
+        {/* Navbar now handles the authLoading state internally to show/hide elements cleanly */}
+        <Navbar user={user} setUser={setUser} authLoading={authLoading} />
         <main>
           <Routes>
             <Route path="/" element={<Home user={user} />} />
             <Route path="/login" element={!user ? <Login setUser={setUser} /> : <Navigate to="/" />} />
             <Route path="/signup" element={!user ? <Signup setUser={setUser} /> : <Navigate to="/" />} />
-            <Route path="/write" element={user ? <Write user={user} /> : <Navigate to="/login" />} />
+            {/* Protected Routes */}
+            <Route path="/write" element={user ? <Write user={user} /> : (authLoading ? <div className="h-screen flex items-center justify-center">Loading...</div> : <Navigate to="/login" />)} />
             <Route path="/article/:id" element={<ArticleView user={user} />} />
             
             {/* "My Profile" Route */}
-            <Route path="/profile" element={user ? <Profile currentUser={user} /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={user ? <Profile currentUser={user} /> : (authLoading ? <div className="h-screen flex items-center justify-center">Loading...</div> : <Navigate to="/login" />)} />
             
             {/* "Public Profile" Route */}
             <Route path="/user/:userId" element={<Profile currentUser={user} />} />

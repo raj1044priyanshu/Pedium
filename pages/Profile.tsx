@@ -18,6 +18,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileName, setProfileName] = useState<string>(isOwnProfile ? currentUser.name : (location.state?.authorName || 'User'));
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(isOwnProfile ? (currentUser?.prefs?.avatar || null) : null);
   
   // Social Stats
   const [followersCount, setFollowersCount] = useState(0);
@@ -26,6 +27,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
   // Interaction State
   const [isFollowing, setIsFollowing] = useState(false);
   const [followDocId, setFollowDocId] = useState<string | null>(null);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   useEffect(() => {
     if (targetUserId) {
@@ -72,6 +74,9 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
 
   const handleFollowToggle = async () => {
       if (!currentUser || !targetUserId) return;
+      if (isFollowLoading) return;
+
+      setIsFollowLoading(true);
 
       // Optimistic Update
       const previousState = isFollowing;
@@ -88,11 +93,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
               const res = await appwriteService.followUser(currentUser.$id, targetUserId);
               setFollowDocId(res.$id);
           }
-      } catch (e) {
+      } catch (e: any) {
           console.error("Follow action failed", e);
           // Revert
           setIsFollowing(previousState);
           setFollowersCount(previousCount);
+          alert("Follow failed: " + e.message);
+      } finally {
+          setIsFollowLoading(false);
       }
   };
 
@@ -109,8 +117,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
             <div className="bg-white dark:bg-[#151f32] rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 mb-12 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-                    <div className="w-32 h-32 rounded-full border-4 border-white dark:border-[#151f32] bg-brand-accent text-white flex items-center justify-center text-5xl font-serif font-bold shadow-lg shrink-0">
-                        {profileName.charAt(0).toUpperCase()}
+                    <div className="w-32 h-32 rounded-full border-4 border-white dark:border-[#151f32] bg-white dark:bg-brand-card flex items-center justify-center shadow-lg shrink-0 overflow-hidden">
+                        {profileAvatar ? (
+                             <img src={profileAvatar} alt={profileName} className="w-full h-full object-cover" />
+                        ) : (
+                             <div className="w-full h-full bg-brand-accent flex items-center justify-center text-5xl font-serif font-bold text-white">
+                                {profileName.charAt(0).toUpperCase()}
+                             </div>
+                        )}
                     </div>
                     <div className="flex-1 text-center md:text-left mb-2">
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{profileName}</h1>
@@ -143,13 +157,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
                             currentUser ? (
                                 <button 
                                     onClick={handleFollowToggle}
-                                    className={`px-8 py-2.5 rounded-full font-bold text-sm transition transform hover:-translate-y-0.5 shadow-md ${
+                                    disabled={isFollowLoading}
+                                    className={`px-8 py-2.5 rounded-full font-bold text-sm transition transform hover:-translate-y-0.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
                                         isFollowing 
                                         ? 'bg-transparent border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300' 
                                         : 'bg-brand-accent text-white border-2 border-transparent'
                                     }`}
                                 >
-                                    {isFollowing ? 'Following' : 'Follow'}
+                                    {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
                                 </button>
                             ) : (
                                 <Link to="/login" className="px-6 py-2 bg-brand-accent text-white rounded-full font-bold text-sm">

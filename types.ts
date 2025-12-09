@@ -3,6 +3,9 @@ export interface UserProfile {
   name: string;
   email: string;
   registration: string;
+  prefs: {
+    avatar?: string;
+  };
 }
 
 export interface Article {

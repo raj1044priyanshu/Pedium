@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID, Query } from 'appwrite';
+import { Client, Account, Databases, Storage, ID, Query, OAuthProvider } from 'appwrite';
 import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, DB_ID, COLLECTION_ID_ARTICLES, COLLECTION_ID_COMMENTS, COLLECTION_ID_FOLLOWS, BUCKET_ID_IMAGES } from '../constants';
 import { Article } from '../types';
 
@@ -16,9 +16,31 @@ export const appwriteService = {
     return account.createEmailPasswordSession(email, pass);
   },
 
+  async loginWithGoogle() {
+      // Ensure 'Google' is enabled in Appwrite Console > Auth > Settings
+      // Ensure your domain (e.g., 'localhost') is added in Appwrite Console > Overview > Platforms
+      // We use 'google' string directly to ensure compatibility if the Enum is not correctly exported in the bundle
+      return account.createOAuth2Session(
+          'google' as OAuthProvider, 
+          window.location.origin, // Success URL
+          window.location.origin  // Failure URL
+      );
+  },
+
   async register(email: string, pass: string, name: string) {
+    // 1. Create Account
     await account.create(ID.unique(), email, pass, name);
-    return this.login(email, pass);
+    
+    // 2. Login to establish session
+    await this.login(email, pass);
+
+    // 3. Generate Cute AI Avatar (DiceBear Adventurer)
+    const avatarUrl = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    
+    // 4. Update User Preferences with Avatar
+    await account.updatePrefs({ avatar: avatarUrl });
+    
+    return true;
   },
 
   async logout() {
@@ -31,6 +53,10 @@ export const appwriteService = {
     } catch (error) {
       return null;
     }
+  },
+
+  async updatePrefs(prefs: any) {
+      return account.updatePrefs(prefs);
   },
 
   // Storage
@@ -200,27 +226,56 @@ export const appwriteService = {
 
   async isFollowing(currentUserId: string, targetUserId: string) {
       try {
+        // Preferred: Check using exact index
         const res = await databases.listDocuments(DB_ID, COLLECTION_ID_FOLLOWS, [
             Query.equal('followerId', currentUserId),
             Query.equal('followingId', targetUserId)
         ]);
         return res.documents.length > 0 ? res.documents[0] : null;
       } catch (e: any) { 
-        if(e.code === 400 && e.message.includes('Index not found')) {
-            console.error("CRITICAL: Missing Index on 'follows' collection. Follow feature will not work. See metadata.json");
+        // Fallback: If "following_idx" is missing but "follower_idx" exists, we can fetch all follows and filter in JS.
+        // This prevents the feature from breaking if the user only created one index.
+        if (e.code === 400 && e.message.includes('Index not found')) {
+            console.warn("Using fallback follow check (Missing Index).");
+            try {
+                 const res = await databases.listDocuments(DB_ID, COLLECTION_ID_FOLLOWS, [
+                    Query.equal('followerId', currentUserId)
+                ]);
+                return res.documents.find((d: any) => d.followingId === targetUserId) || null;
+            } catch (innerE) {
+                return null;
+            }
         }
         return null; 
       }
   },
 
   async followUser(currentUserId: string, targetUserId: string) {
+      // 1. DUPLICATE CHECK: Check if already following before creating
       try {
+          const existing = await this.isFollowing(currentUserId, targetUserId);
+          if (existing) {
+              return existing; // Return the existing document, do not create a new one
+          }
+      } catch (checkError) {
+          // Ignore check error and proceed to try creation, 
+          // or handle specific index errors if strict
+      }
+
+      try {
+        // Updated payload to match your Database Schema requirements
         return await databases.createDocument(DB_ID, COLLECTION_ID_FOLLOWS, ID.unique(), {
             followerId: currentUserId,
-            followingId: targetUserId
+            followingId: targetUserId,
+            followDate: new Date().toISOString(),
+            status: 'active' 
         });
       } catch (e: any) {
+          if (e.code === 401 || e.code === 403) {
+             throw new Error("PERMISSION DENIED: Go to Appwrite Console > Database > Follows > Settings > Permissions. Add Role 'Users' with Create/Read/Delete.");
+          }
           if (e.code === 404) throw new Error("Follows feature not configured.");
+          
           throw e;
       }
   },
