@@ -1,0 +1,6 @@
+{
+  "name": "Pedium",
+  "description": "A premium blogging platform with AI, 3D aesthetics, and block-based editing.",
+  "instructions": "Go to your Appwrite Console:\n\n1. **Database**:\n   - Database ID: 'pedium_db'\n   - Collection ID: 'articles'\n   - Attributes:\n     - title (String, 255, Required)\n     - content (String, 10000000, Required) -> Note: This now stores JSON string from Editor.js\n     - summary (String, 5000, Required)\n     - userId (String, 255, Required)\n     - authorName (String, 255, Required)\n     - tags (String, Array, Optional)\n     - createdAt (String, 255, Required)\n     - coverImageId (String, 255, Optional) <--- NEW!\n\n2. **Storage** (Left Sidebar):\n   - Click 'Create Bucket'\n   - Name: 'Article Covers'\n   - ID: 'article_covers' (Must be exact)\n   - Permissions: \n     - Role 'Any' -> Read\n     - Role 'Users' -> Create, Read, Update, Delete\n\n3. **Database Permissions**:\n   - Ensure 'articles' collection has Role 'Any' (Read) and 'Users' (Create, Update, Delete).",
+  "requestFramePermissions": []
+}
