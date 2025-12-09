@@ -15,6 +15,17 @@ export interface Article {
   tags: string[];
   $createdAt: string; // Using Appwrite system attribute
   coverImageId?: string;
+  views?: number;
+  likedBy?: string[]; // Array of User IDs
+}
+
+export interface Comment {
+  $id: string;
+  content: string;
+  articleId: string;
+  userId: string;
+  authorName: string;
+  $createdAt: string;
 }
 
 export enum LoadingState {

@@ -1,5 +1,5 @@
 import { Client, Account, Databases, Storage, ID, Query } from 'appwrite';
-import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, DB_ID, COLLECTION_ID_ARTICLES, BUCKET_ID_IMAGES } from '../constants';
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, DB_ID, COLLECTION_ID_ARTICLES, COLLECTION_ID_COMMENTS, COLLECTION_ID_FOLLOWS, BUCKET_ID_IMAGES } from '../constants';
 import { Article } from '../types';
 
 const client = new Client()
@@ -47,13 +47,28 @@ export const appwriteService = {
   },
 
   // Articles
-  async createArticle(article: Omit<Article, '$id' | '$createdAt'>) {
-    return databases.createDocument(
-      DB_ID,
-      COLLECTION_ID_ARTICLES,
-      ID.unique(),
-      article
-    );
+  async createArticle(article: Omit<Article, '$id' | '$createdAt' | 'views' | 'likedBy'>) {
+    try {
+      // Attempt to create with full social schema
+      return await databases.createDocument(
+        DB_ID,
+        COLLECTION_ID_ARTICLES,
+        ID.unique(),
+        { ...article, views: 0, likedBy: [] }
+      );
+    } catch (error: any) {
+      // Fallback: If 'views' or 'likedBy' attributes are missing in DB, create basic article
+      if (error.message && error.message.includes('Unknown attribute')) {
+          console.warn("Social attributes missing in Schema. Creating basic article.");
+          return databases.createDocument(
+            DB_ID,
+            COLLECTION_ID_ARTICLES,
+            ID.unique(),
+            article
+          );
+      }
+      throw error;
+    }
   },
 
   async getArticles(queries: string[] = []) {
@@ -95,5 +110,122 @@ export const appwriteService = {
           [Query.equal('userId', userId)]
         );
     }
+  },
+
+  // Views & Likes
+  async incrementView(articleId: string, currentViews: number) {
+      try {
+          await databases.updateDocument(DB_ID, COLLECTION_ID_ARTICLES, articleId, {
+              views: currentViews + 1
+          });
+      } catch (e) { 
+          // Silently fail if 'views' attribute is missing to prevent UI disruption
+          console.warn("Failed to increment view (Attribute might be missing)", e); 
+      }
+  },
+
+  async toggleLike(articleId: string, likedBy: string[], userId: string) {
+      const isLiked = likedBy.includes(userId);
+      let newLikedBy = [];
+      
+      if (isLiked) {
+          newLikedBy = likedBy.filter(id => id !== userId);
+      } else {
+          newLikedBy = [...likedBy, userId];
+      }
+
+      try {
+        await databases.updateDocument(DB_ID, COLLECTION_ID_ARTICLES, articleId, {
+            likedBy: newLikedBy
+        });
+        return newLikedBy;
+      } catch (e: any) {
+          if (e.message && e.message.includes('Unknown attribute')) {
+              console.warn("Like failed: 'likedBy' attribute missing in DB.");
+              return likedBy; // Return original state
+          }
+          throw e;
+      }
+  },
+
+  // Comments
+  async getComments(articleId: string) {
+      try {
+        return await databases.listDocuments(
+            DB_ID, 
+            COLLECTION_ID_COMMENTS, 
+            [Query.equal('articleId', articleId), Query.orderDesc('$createdAt')]
+        );
+      } catch (e: any) {
+          if (e.code === 404) {
+              console.warn("Comments collection not found/created yet.");
+              return { documents: [], total: 0 };
+          }
+          throw e;
+      }
+  },
+
+  async addComment(articleId: string, content: string, userId: string, authorName: string) {
+      try {
+        return await databases.createDocument(
+            DB_ID,
+            COLLECTION_ID_COMMENTS,
+            ID.unique(),
+            { articleId, content, userId, authorName }
+        );
+      } catch (e: any) {
+          if (e.code === 404) throw new Error("Comments feature not configured (Collection missing).");
+          throw e;
+      }
+  },
+
+  // Follows
+  async getFollowersCount(userId: string) {
+      try {
+        const res = await databases.listDocuments(DB_ID, COLLECTION_ID_FOLLOWS, [
+            Query.equal('followingId', userId)
+        ]);
+        return res.total;
+      } catch (e) { return 0; }
+  },
+
+  async getFollowingCount(userId: string) {
+      try {
+        const res = await databases.listDocuments(DB_ID, COLLECTION_ID_FOLLOWS, [
+            Query.equal('followerId', userId)
+        ]);
+        return res.total;
+      } catch (e) { return 0; }
+  },
+
+  async isFollowing(currentUserId: string, targetUserId: string) {
+      try {
+        const res = await databases.listDocuments(DB_ID, COLLECTION_ID_FOLLOWS, [
+            Query.equal('followerId', currentUserId),
+            Query.equal('followingId', targetUserId)
+        ]);
+        return res.documents.length > 0 ? res.documents[0] : null;
+      } catch (e: any) { 
+        if(e.code === 400 && e.message.includes('Index not found')) {
+            console.error("CRITICAL: Missing Index on 'follows' collection. Follow feature will not work. See metadata.json");
+        }
+        return null; 
+      }
+  },
+
+  async followUser(currentUserId: string, targetUserId: string) {
+      try {
+        return await databases.createDocument(DB_ID, COLLECTION_ID_FOLLOWS, ID.unique(), {
+            followerId: currentUserId,
+            followingId: targetUserId
+        });
+      } catch (e: any) {
+          if (e.code === 404) throw new Error("Follows feature not configured.");
+          throw e;
+      }
+  },
+
+  async unfollowUser(docId: string) {
+      return databases.deleteDocument(DB_ID, COLLECTION_ID_FOLLOWS, docId);
   }
 };

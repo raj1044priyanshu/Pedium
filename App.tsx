@@ -47,7 +47,13 @@ const App: React.FC = () => {
             <Route path="/signup" element={!user ? <Signup setUser={setUser} /> : <Navigate to="/" />} />
             <Route path="/write" element={user ? <Write user={user} /> : <Navigate to="/login" />} />
             <Route path="/article/:id" element={<ArticleView user={user} />} />
-            <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/login" />} />
+            
+            {/* "My Profile" Route */}
+            <Route path="/profile" element={user ? <Profile currentUser={user} /> : <Navigate to="/login" />} />
+            
+            {/* "Public Profile" Route */}
+            <Route path="/user/:userId" element={<Profile currentUser={user} />} />
+            
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

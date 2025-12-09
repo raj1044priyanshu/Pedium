@@ -4,6 +4,8 @@ export const APPWRITE_PROJECT_ID = "6936f3d0000790358ae9";
 // Appwrite Database Constants
 export const DB_ID = "pedium_db";
 export const COLLECTION_ID_ARTICLES = "articles";
+export const COLLECTION_ID_COMMENTS = "comments";
+export const COLLECTION_ID_FOLLOWS = "follows";
 export const BUCKET_ID_IMAGES = "article_covers";
 
 export const CATEGORIES = [

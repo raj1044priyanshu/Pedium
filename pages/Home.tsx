@@ -49,7 +49,6 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
   const getImageUrl = (article: Article) => {
       if (article.coverImageId) {
-          // Use getFileView to ensure it works just like the article page
           return appwriteService.getFileView(article.coverImageId).toString();
       }
       return null;
@@ -122,15 +121,24 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                      const coverUrl = getImageUrl(article);
                      
                      return (
-                     <article key={article.$id} className="group cursor-pointer flex flex-col md:flex-row gap-8 items-start border-b border-gray-100 dark:border-gray-800 pb-12 last:border-0" onClick={() => window.location.hash = `#/article/${article.$id}`}>
+                     <article key={article.$id} className="group cursor-pointer flex flex-col md:flex-row gap-8 items-start border-b border-gray-100 dark:border-gray-800 pb-12 last:border-0" onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('a')) return;
+                        window.location.hash = `#/article/${article.$id}`;
+                     }}>
                         <div className="flex-1 order-2 md:order-1">
                           <div className="flex items-center space-x-2 mb-3">
-                             <img 
-                               src={`https://ui-avatars.com/api/?name=${article.authorName}&background=0d9488&color=fff`} 
-                               alt="Author" 
-                               className="w-6 h-6 rounded-full"
-                             />
-                             <span className="text-sm font-semibold text-gray-900 dark:text-white">{article.authorName}</span>
+                             <Link 
+                                to={`/user/${article.userId}`} 
+                                state={{ authorName: article.authorName }}
+                                className="flex items-center space-x-2 hover:opacity-80 transition"
+                             >
+                                 <img 
+                                   src={`https://ui-avatars.com/api/?name=${article.authorName}&background=0d9488&color=fff`} 
+                                   alt="Author" 
+                                   className="w-6 h-6 rounded-full"
+                                 />
+                                 <span className="text-sm font-semibold text-gray-900 dark:text-white hover:underline decoration-brand-accent">{article.authorName}</span>
+                             </Link>
                              <span className="text-gray-400 text-sm">·</span>
                              <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(article.$createdAt).toLocaleDateString()}</span>
                           </div>
@@ -145,9 +153,6 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                  <span className="bg-gray-100 dark:bg-brand-card text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-medium border border-transparent dark:border-gray-700">
                                    {article.tags?.[0] || 'General'}
                                  </span>
-                                 <span className="text-xs text-gray-400 font-medium">
-                                   {Math.ceil(article.content.length / 2000)} min read
-                                 </span>
                              </div>
                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 group-hover:text-brand-accent transition-transform group-hover:translate-x-1">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
@@ -160,14 +165,11 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                 src={coverUrl} 
                                 alt={article.title}
                                 onError={(e) => {
-                                    // If the real image fails, show a placeholder.
-                                    console.warn("Cover image failed to load. Check bucket permissions.", coverUrl);
                                     e.currentTarget.src = `https://ui-avatars.com/api/?name=Error&background=fee2e2&color=991b1b&font-size=0.3`;
                                 }}
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
                             />
                           ) : (
-                             // No cover image uploaded? Show random nice image.
                              <img 
                                 src={`https://picsum.photos/seed/${article.$id}/800/600`}
                                 alt="Random Cover"
@@ -182,7 +184,6 @@ const Home: React.FC<HomeProps> = ({ user }) => {
              )}
           </div>
 
-          {/* Sidebar */}
           <div className="hidden lg:block lg:w-1/3 pl-8 h-fit sticky top-24">
              <div className="mb-10">
                <div className="relative group">
