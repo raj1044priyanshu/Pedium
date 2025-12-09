@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { appwriteService } from '../services/appwriteService';
 import { UserProfile } from '../types';
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '../constants';
 
 interface LoginProps {
   setUser: (user: UserProfile) => void;
@@ -12,6 +13,11 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Construct the exact callback URL for Google Cloud
+  // Standard Appwrite Cloud pattern: https://cloud.appwrite.io/v1/account/sessions/oauth2/callback/google/[PROJECT_ID]
+  const googleCallbackUrl = `${APPWRITE_ENDPOINT}/account/sessions/oauth2/callback/google/${APPWRITE_PROJECT_ID}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,17 +39,13 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
           await appwriteService.loginWithGoogle();
       } catch (e: any) {
           console.error(e);
-          // Help the user debug the Appwrite Platform error
-          if (e.message && (e.message.includes("Invalid success URL") || e.message.includes("Invalid failure URL"))) {
-             setError(`Configuration Error: You must add "${window.location.hostname}" as a Web Platform in your Appwrite Console.`);
-          } else {
-             setError(e.message || "Google Login failed");
-          }
+          setError(e.message || "Google Login failed");
+          setShowHelp(true);
       }
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center bg-white dark:bg-brand-darker px-4 transition-colors duration-300">
+    <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center bg-white dark:bg-brand-darker px-4 transition-colors duration-300 py-10">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
            <h2 className="text-4xl font-serif font-medium text-gray-900 dark:text-white">Welcome back</h2>
@@ -63,6 +65,28 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
                 </svg>
                 Continue with Google
             </button>
+
+            {/* Troubleshooting Section */}
+            <div className="text-center">
+                <button onClick={() => setShowHelp(!showHelp)} className="text-xs text-brand-accent hover:underline">
+                    Having trouble connecting?
+                </button>
+            </div>
+
+            {showHelp && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-sm border border-blue-100 dark:border-blue-800 text-left">
+                    <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2">Google Login Fix</h4>
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">
+                        Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="underline font-bold">Google Cloud Credentials</a>, edit your OAuth 2.0 Client ID, and paste this into <strong>Authorized redirect URIs</strong>:
+                    </p>
+                    <div className="bg-white dark:bg-black p-2 rounded border border-gray-200 dark:border-gray-700 break-all font-mono text-xs select-all">
+                        {googleCallbackUrl}
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2 text-xs">
+                        Also ensure <strong>{window.location.hostname}</strong> is added as a Web Platform in Appwrite Console.
+                    </p>
+                </div>
+            )}
 
             <div className="relative">
                 <div className="absolute inset-0 flex items-center">

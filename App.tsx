@@ -33,6 +33,14 @@ const App: React.FC = () => {
         }
 
         setUser(userData as unknown as UserProfile);
+
+        // Clean up Appwrite OAuth parameters from URL after successful login
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('project') || params.get('key') || params.get('secret')) {
+             // Keep the path and hash, but remove the query params
+             window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        }
+
       } catch (e) {
         setUser(null);
       } finally {

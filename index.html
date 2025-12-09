@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pedium - Elevate your reading.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
@@ -12,13 +11,7 @@
       // Global Polyfills
       window.global = window;
       
-      // Process Polyfill: Minimal definition to satisfy process.env usage
-      window.process = { 
-        env: { NODE_ENV: 'production' },
-        browser: true,
-      };
-      
-      // Buffer Polyfill: Required for some Appwrite/Gemini internals
+      // Buffer Polyfill: Required for some Appwrite/Gemini internals in browser environment
       if (typeof window.Buffer === 'undefined') {
           function Buffer(arg) {
              if (typeof arg === 'string') {
@@ -66,173 +59,27 @@
           window.Buffer = Buffer;
       }
     </script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Plus Jakarta Sans', 'sans-serif'],
-              serif: ['Lora', 'serif'],
-            },
-            colors: {
-              brand: {
-                dark: '#0f172a', // Slate 900
-                darker: '#020617', // Slate 950
-                card: '#1e293b', // Slate 800
-                light: '#f8fafc',
-                accent: '#0d9488', // Teal 600
-                accentHover: '#0f766e', // Teal 700
-              }
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      
-      /* Editor JS General Fixes */
-      .ce-block__content, .ce-toolbar__content { max-width: 100%; margin: 0 auto; }
-      
-      /* Light Mode Contrast for Editor Popovers */
-      .ce-popover {
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      }
-      .ce-popover__item-label {
-        color: #1e293b;
-        font-weight: 500;
-      }
-      .ce-popover__item-icon {
-        color: #475569;
-        background: transparent;
-        box-shadow: none;
-      }
-      .ce-popover__item:hover .ce-popover__item-icon {
-        background-color: transparent;
-      }
-      
-      /* Dark Mode Editor Overrides */
-      .dark .ce-header, 
-      .dark .ce-paragraph, 
-      .dark .cdx-list__item, 
-      .dark .ce-code__textarea,
-      .dark .cdx-quote__text, 
-      .dark .cdx-quote__caption,
-      .dark .tc-table__cell { 
-        color: #f1f5f9; 
-      }
-
-      .dark .ce-code__textarea {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-        color: #a5f3fc;
-      }
-
-      .dark .ce-delimiter:before {
-        color: #e2e8f0;
-        font-size: 30px;
-      }
-
-      /* Toolbar Buttons (Left Side) */
-      .dark .ce-toolbar__plus, .dark .ce-toolbar__settings-btn { 
-        color: #e2e8f0; 
-        background-color: #334155; 
-        border: 1px solid #475569;
-      }
-      .dark .ce-toolbar__plus:hover, .dark .ce-toolbar__settings-btn:hover { 
-        background-color: #475569; 
-        color: #fff;
-      }
-      
-      /* Popovers / Menus in Dark Mode */
-      .dark .ce-popover { 
-        background-color: #1e293b; 
-        border: 1px solid #334155; 
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-      }
-      .dark .ce-popover__item:hover { 
-        background-color: #334155; 
-      }
-      .dark .ce-popover__item-label { color: #f1f5f9; }
-      .dark .ce-popover__item-icon { 
-        color: #cbd5e1; 
-        background-color: transparent;
-        box-shadow: none;
-      }
-      
-      /* Inline Toolbar (Text Selection) in Dark Mode */
-      .dark .ce-inline-toolbar { 
-        background-color: #1e293b; 
-        border: 1px solid #334155; 
-        color: #fff; 
-      }
-      .dark .ce-inline-tool {
-        color: #e2e8f0;
-      }
-      .dark .ce-inline-tool:hover { 
-        background-color: #334155; 
-        color: #fff;
-      }
-      .dark .ce-inline-tool--active {
-        color: #0d9488; /* Brand Accent */
-      }
-      .dark .ce-conversion-toolbar {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-      }
-      .dark .ce-conversion-tool__icon {
-        background: transparent;
-      }
-      .dark .ce-conversion-tool:hover {
-        background-color: #334155;
-      }
-
-      /* Table Tool Dark Mode */
-      .dark .tc-popover {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-      }
-      .dark .tc-row::after { background: #334155; }
-      
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-      .dark ::-webkit-scrollbar-thumb { background: #475569; }
-    </style>
   <script type="importmap">
 {
   "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "appwrite": "https://aistudiocdn.com/appwrite@^21.5.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "appwrite": "https://aistudiocdn.com/appwrite@^16.0.2",
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "@editorjs/editorjs": "https://esm.sh/@editorjs/editorjs@2.29.0",
-    "@editorjs/header": "https://esm.sh/@editorjs/header@2.8.1",
-    "@editorjs/list": "https://esm.sh/@editorjs/list@1.9.0",
-    "@editorjs/paragraph": "https://esm.sh/@editorjs/paragraph@2.11.3",
-    "@editorjs/image": "https://esm.sh/@editorjs/image@2.9.0",
-    "@editorjs/quote": "https://esm.sh/@editorjs/quote@2.6.0",
-    "@editorjs/code": "https://esm.sh/@editorjs/code@2.9.0",
-    "@editorjs/delimiter": "https://esm.sh/@editorjs/delimiter@1.4.0",
-    "@editorjs/table": "https://esm.sh/@editorjs/table@2.3.0"
+    "@editorjs/editorjs": "https://aistudiocdn.com/@editorjs/editorjs@^2.31.0",
+    "@editorjs/header": "https://aistudiocdn.com/@editorjs/header@^2.8.8",
+    "@editorjs/list": "https://aistudiocdn.com/@editorjs/list@^2.0.9",
+    "@editorjs/paragraph": "https://aistudiocdn.com/@editorjs/paragraph@^2.11.7",
+    "@editorjs/image": "https://aistudiocdn.com/@editorjs/image@^2.10.3",
+    "@editorjs/quote": "https://aistudiocdn.com/@editorjs/quote@^2.7.6",
+    "@editorjs/code": "https://aistudiocdn.com/@editorjs/code@^2.9.3",
+    "@editorjs/delimiter": "https://aistudiocdn.com/@editorjs/delimiter@^1.4.2",
+    "@editorjs/table": "https://aistudiocdn.com/@editorjs/table@^2.4.5",
+    "three": "https://aistudiocdn.com/three@^0.181.2",
+    "vite": "https://aistudiocdn.com/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
